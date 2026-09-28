@@ -1,0 +1,222 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\LatestPostController;
+use App\Http\Controllers\StatisticController;
+use App\Http\Controllers\AboutController;
+use App\Http\Controllers\HealthTipsApiController;
+use App\Http\Controllers\SpecializedCentersApiController;
+use App\Http\Controllers\GalleryApiController;
+use App\Http\Controllers\AcademicStaffApiController;
+use App\Http\Controllers\AcademicProjectApiController;
+use App\Http\Controllers\AcademicPageApiController;
+use App\Http\Controllers\AcademicResearchController;
+use App\Http\Controllers\AcademicResearchPublicationApiController;
+use App\Http\Controllers\DepartmentsApiController;
+use App\Http\Controllers\OfficeApiController;
+use App\Http\Controllers\ResearchController;
+use App\Http\Controllers\ResearchProjectsController;
+use App\Http\Controllers\MedicineDepartmentApiController;
+use App\Http\Controllers\NursingDepartmentApiController;
+use App\Http\Controllers\HomeHeroApiController;
+use App\Http\Controllers\MedicinePartnershipApiController;
+use App\Http\Controllers\NursingPartnershipApiController;
+use App\Http\Controllers\PublicHealthPartnershipApiController;
+use App\Http\Controllers\ResearchRolesResponsibilityApiController;
+use App\Http\Controllers\FooterController;
+use App\Http\Controllers\AlumniApiController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+// Simple auth check for admin features
+Route::post('/auth/login', function (Request $request) {
+    $credentials = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required'
+    ]);
+    
+    if (Auth::attempt($credentials)) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+
+
+        
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'user' => $user
+        ]);
+    }
+    
+    return response()->json([
+        'success' => false,
+        'message' => 'Invalid credentials'
+    ], 401);
+});
+
+// Specific routes must come before the resource route to avoid conflicts
+Route::get('/latest-posts/latest-news', [LatestPostController::class, 'getLatestNews']);
+Route::get('/latest-posts/latest-announcements', [LatestPostController::class, 'getLatestAnnouncements']);
+Route::get('/latest-posts/upcoming-events', [LatestPostController::class, 'getUpcomingEvents']);
+Route::get('/latest-posts/past-events', [LatestPostController::class, 'getPastEvents']);
+Route::get('/latest-posts/type/{type}', [LatestPostController::class, 'getByType']);
+
+// Resource route (must come after specific routes)
+Route::apiResource('latest-posts', LatestPostController::class);
+
+Route::get('/home-hero-slides', [HomeHeroApiController::class, 'index']);
+Route::get('/statistics', [StatisticController::class, 'index']);
+
+// About section public API
+Route::get('/about', [AboutController::class, 'aboutPage']);
+Route::get('/leaders', [AboutController::class, 'leaders']);
+Route::get('/mission-vision-values', [AboutController::class, 'missionVisionValues']);
+
+// Health Tips public API
+Route::get('/health-categories', [HealthTipsApiController::class, 'categories']);
+
+// Specialized Centers public API
+Route::get('/specialized-centers', [SpecializedCentersApiController::class, 'index']);
+
+// Gallery public API
+Route::get('/gallery', [GalleryApiController::class, 'index']);
+
+// Academic Staffs public API
+Route::get('/academic-staffs/{school}', [AcademicStaffApiController::class, 'bySchool']);
+Route::get('/academic-staffs/{school}/{slug}', [AcademicStaffApiController::class, 'show']);
+
+// Academic Pages (CMS) public API
+Route::get('/academic-pages/{school}/{page}', [AcademicPageApiController::class, 'show']);
+
+// Research Publications public API
+Route::get('/academics/{school}/research-publications', [AcademicResearchPublicationApiController::class, 'index']);
+Route::get('/academics/{school}/research-publications/{slug}', [AcademicResearchPublicationApiController::class, 'show']);
+
+// Combined Academic Research public API
+Route::get('/academics/academic-research', [AcademicResearchController::class, 'index']);
+Route::get('/academics/academic-research/{slug}', [AcademicResearchController::class, 'show']);
+
+// Academic Projects public API
+Route::get('/academic-projects', [AcademicProjectApiController::class, 'index']);
+Route::get('/academic-projects/{slug}', [AcademicProjectApiController::class, 'show']);
+
+// Medicine Partnerships public API
+Route::get('/medicine/partnerships', [MedicinePartnershipApiController::class, 'index']);
+Route::get('/medicine/partnerships/{slug}', [MedicinePartnershipApiController::class, 'show']);
+
+// Nursing Partnerships public API
+Route::get('/nursing/partnerships', [NursingPartnershipApiController::class, 'index']);
+Route::get('/nursing/partnerships/{slug}', [NursingPartnershipApiController::class, 'show']);
+
+// Public Health Partnerships public API
+Route::get('/public-health/partnerships', [PublicHealthPartnershipApiController::class, 'index']);
+Route::get('/public-health/partnerships/{slug}', [PublicHealthPartnershipApiController::class, 'show']);
+
+// Medicine Departments public API
+Route::get('/medicine/departments', [MedicineDepartmentApiController::class, 'index']);
+Route::get('/medicine/sub-departments/slug/{slug}', [MedicineDepartmentApiController::class, 'showSubDepartmentBySlug']);
+Route::get('/medicine/sub-departments/{id}/academic-units', [MedicineDepartmentApiController::class, 'academicUnitsForSubDepartment']);
+Route::get('/medicine/sub-departments/{id}', [MedicineDepartmentApiController::class, 'showSubDepartment']);
+Route::get('/medicine/departments/{slug}', [MedicineDepartmentApiController::class, 'show']);
+
+// Nursing Departments public API
+Route::get('/nursing/departments', [NursingDepartmentApiController::class, 'index']);
+Route::get('/nursing/departments/{slug}', [NursingDepartmentApiController::class, 'show']);
+
+// Academic Departments dropdown API for admin staff forms
+Route::get('/academics/{school}/departments', [DepartmentsApiController::class, 'index']);
+
+// Office public API
+Route::get('/offices/{office}/page',     [OfficeApiController::class, 'page']);
+Route::get('/offices/{office}/gallery',  [OfficeApiController::class, 'gallery']);
+Route::get('/offices/{office}/services', [OfficeApiController::class, 'services']);
+Route::get('/offices/{office}/projects', [OfficeApiController::class, 'projects']);
+Route::get('/offices/{office}/projects/{slug}', [OfficeApiController::class, 'project']);
+Route::get('/offices/{office}/process', [OfficeApiController::class, 'process']);
+Route::get('/offices/{office}/contact',  [OfficeApiController::class, 'contact']);
+
+// Research API routes
+Route::get('/research/background', [ResearchController::class, 'background']);
+Route::get('/research/mission', [ResearchController::class, 'mission']);
+Route::get('/research/vision', [ResearchController::class, 'vision']);
+Route::get('/research/goals', [ResearchController::class, 'goals']);
+
+// Research Projects API routes (NEW V2 IMPLEMENTATION)
+Route::get('/research/projects/irb', [ResearchProjectsController::class, 'irb']);
+Route::get('/research/projects/idream', [ResearchProjectsController::class, 'idream']);
+Route::get('/research/projects/hdss', [ResearchProjectsController::class, 'hdss']);
+Route::get('/research/projects/all', [ResearchProjectsController::class, 'all']);
+Route::get('/research/projects-v2/{type}', [ResearchProjectsController::class, 'getProject']);
+Route::get('/research/projects-v2/all/data', [ResearchProjectsController::class, 'getAllProjects']);
+
+// Research Roles & Responsibility API routes
+Route::prefix('/research/roles-responsibility')->group(function () {
+    Route::get('/all', [ResearchRolesResponsibilityApiController::class, 'getAll']);
+    Route::get('/hero', [ResearchRolesResponsibilityApiController::class, 'getHero']);
+    Route::get('/overview', [ResearchRolesResponsibilityApiController::class, 'getOverview']);
+    Route::get('/categories', [ResearchRolesResponsibilityApiController::class, 'getCategories']);
+    Route::get('/process', [ResearchRolesResponsibilityApiController::class, 'getProcess']);
+    Route::get('/policies', [ResearchRolesResponsibilityApiController::class, 'getPolicies']);
+    Route::get('/faqs', [ResearchRolesResponsibilityApiController::class, 'getFaqs']);
+    Route::get('/statistics', [ResearchRolesResponsibilityApiController::class, 'getStatistics']);
+    Route::get('/contact', [ResearchRolesResponsibilityApiController::class, 'getContact']);
+});
+
+// Partners Public API Routes
+use App\Http\Controllers\PartnersApiController;
+use App\Http\Controllers\PartnershipStatisticsApiController;
+use App\Http\Controllers\PartnershipAreasApiController;
+use App\Http\Controllers\SuccessStoriesApiController;
+use App\Http\Controllers\PartnershipDocumentsApiController;
+use App\Http\Controllers\PartnershipContactApiController;
+
+Route::prefix('/partners')->group(function () {
+    Route::get('/page', [PartnersApiController::class, 'pageSettings']);
+    Route::get('', [PartnersApiController::class, 'index']);
+    Route::get('/local', [PartnersApiController::class, 'local']);
+    Route::get('/external', [PartnersApiController::class, 'external']);
+    Route::get('/featured', [PartnersApiController::class, 'featured']);
+    Route::get('/{slug}', [PartnersApiController::class, 'show']);
+});
+
+Route::get('/partnership-statistics', [PartnershipStatisticsApiController::class, 'index']);
+Route::get('/partnership-areas', [PartnershipAreasApiController::class, 'index']);
+
+Route::prefix('/success-stories')->group(function () {
+    Route::get('', [SuccessStoriesApiController::class, 'index']);
+    Route::get('/{slug}', [SuccessStoriesApiController::class, 'show']);
+});
+
+Route::prefix('/partnership-documents')->group(function () {
+    Route::get('', [PartnershipDocumentsApiController::class, 'index']);
+    Route::get('/category/{category}', [PartnershipDocumentsApiController::class, 'byCategory']);
+});
+
+Route::get('/partnership-contact', [PartnershipContactApiController::class, 'index']);
+
+Route::post('/partnership-applications', [\App\Http\Controllers\PartnershipApplicationApiController::class, 'store']);
+Route::get('/footer', [FooterController::class, 'index']);
+
+Route::prefix('/alumni')->group(function () {
+    Route::get('', [AlumniApiController::class, 'index']);
+    Route::get('/stats', [AlumniApiController::class, 'stats']);
+    Route::get('/events', [AlumniApiController::class, 'events']);
+    Route::post('/register', [AlumniApiController::class, 'register']);
+});
